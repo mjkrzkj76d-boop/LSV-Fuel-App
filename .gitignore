@@ -1,0 +1,10 @@
+# Never commit vessel data or anything derived from it.
+# docs/example-vessel-FICTIONAL.json is the only vessel file allowed in this repo.
+lsv-private/
+*.vessel.json
+*vessel-data*.json
+!docs/example-vessel-FICTIONAL.json
+*-backup-*.json
+screenshots/
+node_modules/
+tests/last-*.csv

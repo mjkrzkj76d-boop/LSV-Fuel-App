@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LSV Fuel">
+<meta name="theme-color" content="#0b1220">
+<title>LSV Fuel Soundings</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <h1 id="hdrName">LSV Fuel Soundings</h1>
+      <div class="muted" id="hdrSub">Unofficial aid · offline · data stays on this device</div>
+    </div>
+  </div>
+  <div class="topbar-inner"><div id="hdrMarking" class="marking hidden"></div></div>
+</header>
+
+<main class="wrap">
+  <!-- EMPTY STATE -->
+  <section id="emptyState" class="card empty hidden">
+    <div class="big">No vessel data loaded</div>
+    <p>This app ships without any vessel data. Import a vessel-data JSON file (tank tables and constants) provided by your unit. It is stored only on this device.</p>
+    <div class="btnrow"><button class="primary" id="btnImportEmpty" type="button">Import vessel data</button></div>
+    <details id="pasteBoxEmpty"><summary class="muted">Or paste JSON</summary>
+      <textarea id="pasteEmpty" placeholder='{"schema":"lsv-fuel-vessel/1", ...}'></textarea>
+      <div class="btnrow"><button id="btnPasteEmpty" type="button">Load pasted JSON</button></div>
+    </details>
+    <div id="importMsgEmpty"></div>
+  </section>
+
+  <!-- SOUNDINGS -->
+  <section class="panel" id="panel-soundings">
+    <div id="summaryCard" class="card summary"></div>
+    <div class="card">
+      <h2>Draft readings (trim correction)</h2>
+      <div class="draft-grid">
+        <div><label>Bow ft</label><input data-draft="bowFt" inputmode="decimal" type="text" autocomplete="off"></div>
+        <div><label>Bow in</label><input data-draft="bowIn" inputmode="decimal" type="text" autocomplete="off"></div>
+        <div><label>Stern ft</label><input data-draft="sternFt" inputmode="decimal" type="text" autocomplete="off"></div>
+        <div><label>Stern in</label><input data-draft="sternIn" inputmode="decimal" type="text" autocomplete="off"></div>
+      </div>
+      <div class="muted" id="trimFormula"></div>
+      <div>Correction applied to trim-corrected tanks: <span class="trim-val" id="trimVal">0.0000"</span></div>
+    </div>
+    <div class="date-row card"><label for="roundDate">Date/time</label><input id="roundDate" type="datetime-local"></div>
+    <div id="tankCards"></div>
+    <div class="btnrow"><button type="button" id="btnClear" class="danger">Clear soundings</button></div>
+  </section>
+
+  <!-- NEEDED -->
+  <section class="panel" id="panel-needed">
+    <div id="neededSummary" class="card summary"></div>
+    <div id="neededCards"></div>
+  </section>
+
+  <!-- LOG -->
+  <section class="panel" id="panel-log">
+    <div class="card">
+      <h2>Burn-rate log</h2>
+      <div class="label-note">Results are from ship logs, not TM data</div>
+      <p class="muted">Saves the current soundings as a "round". Burn between rounds = previous ROB − this ROB + fuel received − fuel transferred off (since previous round), divided by the change in engine-hour reading (or clock hours if no hour readings).</p>
+      <div class="row">
+        <div><label>Engine hour meter</label><input id="logHours" inputmode="decimal" type="text" placeholder="e.g. 12345.6"></div>
+        <div><label>Note</label><input id="logNote" type="text" placeholder="optional"></div>
+        <div><label>Fuel received since last (gal)</label><input id="logRecv" inputmode="decimal" type="text" placeholder="0"></div>
+        <div><label>Transferred off since last (gal)</label><input id="logXfer" inputmode="decimal" type="text" placeholder="0"></div>
+      </div>
+      <div class="btnrow"><button class="primary" type="button" id="btnSaveRound">Save round from current soundings</button></div>
+      <div id="logMsg"></div>
+    </div>
+    <div class="card summary" id="burnSummary"></div>
+    <div class="card">
+      <div class="row"><div><label>Planned speed (kn)</label><input id="speedKn" inputmode="decimal" type="text" placeholder="e.g. 10"></div><div></div></div>
+      <div class="scroll-x"><table class="log" id="logTable"></table></div>
+      <div class="btnrow"><button type="button" id="btnLogCSV">Export log CSV</button><button type="button" class="danger" id="btnLogClear">Delete all log rounds</button></div>
+    </div>
+  </section>
+
+  <!-- CONVERTER -->
+  <section class="panel" id="panel-convert">
+    <div class="card">
+      <h2>Fuel converter</h2>
+      <div class="row">
+        <div><label>Specific gravity (optional)</label><input id="convSG" inputmode="decimal" type="text" placeholder="blank = data density"></div>
+        <div><label>Pounds / gallon</label><div class="out" id="convPPG"></div></div>
+        <div><label>Quantity</label><input id="convVal" inputmode="decimal" type="text"></div>
+        <div><label>Unit</label><select id="convUnit">
+          <option value="gal">Gallons</option><option value="bbl">Barrels</option><option value="mt">Metric tons</option>
+          <option value="st">Short tons</option><option value="lt">Long tons</option><option value="m3">Cubic meters</option>
+          <option value="l">Liters</option><option value="ft3">Cubic feet</option></select></div>
+      </div>
+      <div class="conv-results" id="convOut"></div>
+    </div>
+  </section>
+
+  <!-- DATA -->
+  <section class="panel" id="panel-data">
+    <div class="card" id="dataInfo"></div>
+    <div class="card">
+      <h2>Import / replace vessel data</h2>
+      <p class="muted">Accepts a vessel-data JSON (schema lsv-fuel-vessel/1) or a full backup made by this app. Replacing vessel data keeps your log.</p>
+      <div class="btnrow"><button class="primary" type="button" id="btnImport">Choose JSON file…</button></div>
+      <details><summary class="muted">Paste JSON instead</summary>
+        <textarea id="pasteData" placeholder='{"schema":"lsv-fuel-vessel/1", ...}'></textarea>
+        <div class="btnrow"><button type="button" id="btnPaste">Load pasted JSON</button></div>
+      </details>
+      <div id="importMsg"></div>
+    </div>
+    <div class="card">
+      <h2>Back up / delete</h2>
+      <div class="btnrow">
+        <button type="button" id="btnExportVessel">Export vessel data</button>
+        <button type="button" id="btnExportBackup">Export full backup</button>
+      </div>
+      <div class="btnrow"><button type="button" class="danger" id="btnDelete">Delete vessel data from this device</button></div>
+      <p class="muted">Exports are files you control. They contain the same restricted data you imported; handle them per the distribution marking.</p>
+    </div>
+    <div class="card"><p class="muted">Unofficial calculation aid. The vessel's official sounding tables and technical manuals govern. No network access, analytics, or accounts: everything stays in this browser's storage.</p><p class="muted" id="appVer"></p></div>
+  </section>
+</main>
+
+<input type="file" id="fileInput" class="hidden">
+<nav class="tabs hidden" id="tabs">
+  <button type="button" data-tab="soundings" class="active">Soundings</button>
+  <button type="button" data-tab="needed">To fill</button>
+  <button type="button" data-tab="log">Burn log</button>
+  <button type="button" data-tab="convert">Convert</button>
+  <button type="button" data-tab="data">Data</button>
+</nav>
+<div class="toast" id="toast"></div>
+<script src="calc.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

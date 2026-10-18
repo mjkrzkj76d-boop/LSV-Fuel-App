@@ -1,0 +1,12 @@
+{
+  "name": "lsv-fuel-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline PWA: LSV tank soundings, fuel on board, needed-to-fill, burn-rate log. Ships with no vessel data.",
+  "scripts": {
+    "serve": "node tests/serve.js",
+    "test": "node --test tests/unit.test.js",
+    "smoke": "node tests/smoke.mjs"
+  },
+  "devDependencies": { "playwright-core": "^1.48.0" }
+}
