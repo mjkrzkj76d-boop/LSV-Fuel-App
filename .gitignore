@@ -4,6 +4,7 @@ lsv-private/
 *.vessel.json
 *vessel-data*.json
 !docs/example-vessel-FICTIONAL.json
+!docs/vessel-data.schema.json
 *-backup-*.json
 screenshots/
 node_modules/

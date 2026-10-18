@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lsv-fuel-vessel/1",
+  "title": "LSV Fuel Soundings - vessel data (version 1)",
+  "description": "Vessel data loaded privately into the app. The app validates this in calc.js (validateVesselData); this file documents the same rules.",
+  "type": "object",
+  "required": ["schema", "vessel", "distributionMarking", "constants", "tanks"],
+  "properties": {
+    "schema": { "const": "lsv-fuel-vessel/1" },
+    "vessel": {
+      "type": "object", "required": ["name"],
+      "properties": { "name": { "type": "string", "minLength": 1, "description": "Shown in the app header." }, "class": { "type": "string" } }
+    },
+    "distributionMarking": { "type": "string", "description": "Distribution/handling marking shown in the app header (e.g. 'DISTRIBUTION C ...'). Empty string if the data is public." },
+    "source": { "type": "object", "description": "Free-form provenance (workbook name, generated time, generator)." },
+    "constants": {
+      "type": "object",
+      "required": ["densityLbPerGal", "litersPerGal", "trimVesselLengthFt", "trimTankLengthFt", "trimDivisor", "fuelTotalFillLimitPct"],
+      "properties": {
+        "densityLbPerGal": { "type": "number", "exclusiveMinimum": 0, "description": "Fuel density used for tons and as converter default (spreadsheet: 7.175)." },
+        "waterLbPerGal": { "type": "number", "exclusiveMinimum": 0, "default": 8.345, "description": "lb/gal = SG x this, in the converter." },
+        "litersPerGal": { "type": "number", "exclusiveMinimum": 0, "description": "Spreadsheet: 3.7853." },
+        "cubicMetersPerGal": { "type": "number", "exclusiveMinimum": 0, "default": 0.003785 },
+        "galPerCubicFoot": { "type": "number", "exclusiveMinimum": 0, "default": 7.48051948 },
+        "galPerBarrel": { "type": "number", "exclusiveMinimum": 0, "default": 42 },
+        "lbPerShortTon": { "type": "number", "default": 2000 },
+        "lbPerLongTon": { "type": "number", "default": 2240 },
+        "lbPerMetricTon": { "type": "number", "default": 2204.62 },
+        "trimVesselLengthFt": { "type": "number", "exclusiveMinimum": 0, "description": "Length used in trim correction (spreadsheet: 272.75 ft LOA)." },
+        "trimTankLengthFt": { "type": "number", "exclusiveMinimum": 0, "description": "Spreadsheet: 40." },
+        "trimDivisor": { "type": "number", "exclusiveMinimum": 0, "description": "Spreadsheet: 2." },
+        "trimSign": { "enum": ["stern-minus-bow", "bow-minus-stern"], "default": "stern-minus-bow" },
+        "fuelTotalFillLimitPct": { "type": "number", "exclusiveMinimum": 0, "maximum": 100, "description": "Used for 'Needed for N%' on the total-capacity basis (spreadsheet: 93)." },
+        "lookup": { "enum": ["floor", "interpolate"], "default": "floor", "description": "floor = Excel approximate VLOOKUP (rounds down to the 0.25 in row); interpolate = linear between rows." }
+      }
+    },
+    "tanks": {
+      "type": "array", "minItems": 1, "maxItems": 100,
+      "description": "At least one tank must be type 'fuel'. Total fuel capacity = sum of the last table value of every fuel tank.",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "type", "capacityGal", "fillLimitPct", "unpumpableGal", "trimCorrected", "stepIn", "maxIn", "gallons"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,24}$", "description": "Unique." },
+          "name": { "type": "string", "minLength": 1 },
+          "type": { "enum": ["fuel", "waste", "lube", "hydraulic"] },
+          "capacityGal": { "type": ["number", "null"], "exclusiveMinimum": 0, "description": "Used for percent full and needed-to-fill. null = no percent (e.g. bilge)." },
+          "fillLimitPct": { "type": ["number", "null"], "exclusiveMinimum": 0, "maximum": 100, "description": "Per-tank fill limit for needed-to-fill (spreadsheet: 93 fuel/lube/hydraulic, 95 waste). Requires capacityGal." },
+          "unpumpableGal": { "type": "number", "minimum": 0, "description": "Subtracted from total for 'usable' fuel (fuel tanks only)." },
+          "trimCorrected": { "type": "boolean", "description": "If true, the trim correction (inches) is added to the sounding before lookup." },
+          "stepIn": { "const": 0.25 },
+          "maxIn": { "type": "number", "exclusiveMinimum": 0, "description": "Highest sounding covered. Soundings below 0 or above maxIn show OUT OF RANGE." },
+          "sumGroup": { "type": ["string", "null"], "description": "'sludgeRequest' = included in the waste total." },
+          "gallons": { "type": "array", "minItems": 2, "maxItems": 4000, "items": { "type": "number", "minimum": 0 },
+            "description": "Gallons at 0, 0.25, 0.5 ... maxIn inches (length = maxIn/0.25 + 1). Must not decrease." }
+        }
+      }
+    }
+  }
+}
