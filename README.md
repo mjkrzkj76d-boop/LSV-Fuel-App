@@ -53,13 +53,11 @@ tests/serve.js          tiny local static server for testing
 
 The app contains no vessel data, so the code itself can be hosted publicly. Check with your unit first if you want even the code kept private.
 
-Pushes to `main` deploy this directory with GitHub Actions (`.github/workflows/pages.yml`), using `actions/upload-pages-artifact` and `actions/deploy-pages`. The live app is:
+Pushes to `main` publish this directory with GitHub Pages, source **Deploy from a branch**, branch `main`, folder `/ (root)`. An empty `.nojekyll` file at the repo root makes Pages serve the files as-is. The live app is:
 
 https://mjkrzkj76d-boop.github.io/LSV-Fuel-App/
 
 GitHub Pages serves a project site under `/LSV-Fuel-App/`. HTML assets, the manifest `start_url` and `scope`, and the service worker scope and cache list are all relative to the app directory, so they stay inside that subpath. Do not commit vessel JSON, backups, or screenshots. `.gitignore` excludes `lsv-private/`, `*vessel-data*.json` (the fictional example in `docs/` is the exception), and `screenshots/`.
-
-The repository owner turns publishing on once: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
 **To update:** change the files and bump `CACHE` in `sw.js` (e.g. `lsv-fuel-v1.0.1`) and `APP_VERSION` in `app.js`. Phones pick up the new version on the next launch while online.
 
